@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Responsive Expense Tracker</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      margin: 0;
+      padding: 0;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: auto;
+      padding: 1rem;
+      background: #fff;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    h1, h2 {
+      text-align: center;
+      color: #333;
+    }
+
+    .add-expense, .summary, .expenses-list {
+      margin-top: 2rem;
+    }
+
+    form {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 1rem;
+    }
+
+    form input, form button {
+      padding: 0.5rem;
+      font-size: 1rem;
+      flex: 1 1 200px;
+    }
+
+    form button {
+      background: #007bff;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+    }
+
+    form button:hover {
+      background: #0056b3;
+    }
+
+    .table-container {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+      min-width: 600px;
+    }
+
+    table, th, td {
+      border: 1px solid #ddd;
+    }
+
+    th, td {
+      padding: 0.75rem;
+      text-align: center;
+    }
+
+    button.delete {
+      background: #dc3545;
+      color: white;
+      border: none;
+      padding: 0.4rem 0.6rem;
+      cursor: pointer;
+    }
+
+    button.delete:hover {
+      background: #c82333;
+    }
+
+    @media (max-width: 600px) {
+      form {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      form input, form button {
+        flex: 1 1 100%;
+      }
+
+      .summary h2 {
+        font-size: 1.2rem;
+      }
+
+      table, thead, tbody, th, td, tr {
+        font-size: 0.9rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Expense Tracker</h1>
+
+    <div class="add-expense">
+      <h2>Add Expense</h2>
+      <form id="expenseForm">
+        <input type="text" id="description" placeholder="Description" required />
+        <input type="date" id="date" required />
+        <input type="number" id="amount" placeholder="Amount" min="0.01" step="0.01" required />
+        <button type="submit">Add</button>
+      </form>
+    </div>
+
+    <div class="summary">
+      <h2>Total Spent: <span id="total">0.00</span></h2>
+    </div>
+
+    <div class="expenses-list">
+      <h2>Expense History</h2>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Description</th>
+              <th>Date</th>
+              <th>Amount</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="expenseTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById('expenseForm');
+    const tableBody = document.getElementById('expenseTableBody');
+    const totalDisplay = document.getElementById('total');
+
+    document.addEventListener('DOMContentLoaded', () => {
+      loadExpenses();
+      updateTotal();
+    });
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+
+      const description = document.getElementById('description').value.trim();
+      const date = document.getElementById('date').value;
+      const amount = parseFloat(document.getElementById('amount').value);
+
+      if (!description || !date || isNaN(amount) || amount <= 0) {
+        alert('Please enter valid expense details.');
+        return;
+      }
+
+      const expense = { description, date, amount };
+      const expenses = getExpenses();
+      expenses.push(expense);
+      localStorage.setItem('expenses', JSON.stringify(expenses));
+
+      form.reset();
+      loadExpenses();
+      updateTotal();
+    });
+
+    function getExpenses() {
+      return JSON.parse(localStorage.getItem('expenses')) || [];
+    }
+
+    function loadExpenses() {
+      const expenses = getExpenses();
+      tableBody.innerHTML = '';
+
+      if (expenses.length === 0) {
+        tableBody.innerHTML = `<tr><td colspan="5">No expenses yet.</td></tr>`;
+        return;
+      }
+
+      expenses.forEach((exp, index) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${index + 1}</td>
+          <td>${exp.description}</td>
+          <td>${exp.date}</td>
+          <td>$${exp.amount.toFixed(2)}</td>
+          <td><button class="delete" onclick="deleteExpense(${index})">Delete</button></td>
+        `;
+        tableBody.appendChild(row);
+      });
+    }
+
+    function updateTotal() {
+      const expenses = getExpenses();
+      const total = expenses.reduce((sum, exp) => sum + exp.amount, 0);
+      totalDisplay.textContent = total.toFixed(2);
+    }
+
+    function deleteExpense(index) {
+      const expenses = getExpenses();
+      expenses.splice(index, 1);
+      localStorage.setItem('expenses', JSON.stringify(expenses));
+      loadExpenses();
+      updateTotal();
+    }
+  </script>
+</body>
+</html>
